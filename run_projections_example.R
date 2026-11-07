@@ -52,6 +52,8 @@ if (length(bench_files)) {
 
 # ---- 6. lineups from the injury-adjusted projections -------------------------------
 players <- playable_slate(proj)                         # drops Out players, byes and games already played
+cat(sprintf("\nOptimizing %d players using the model's injury-adjusted projections (column 'proj'), e.g.:\n", nrow(players)))
+print(utils::head(players[order(-players$proj), c("name", "position", "team", "salary", "proj", "p_play")], 8), row.names = FALSE)
 res <- optimize_lineups(players, site, n = 10, min_unique = 3, randomness = 0.12,
                         max_exposure = 0.5, stack_min = 1, bringback_min = 1, seed = 1)
 print(res)

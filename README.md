@@ -20,11 +20,19 @@ source("run_projections_example.R")       # whole flow on a demo slate (real pla
 ## Quick start
 
 ```r
-setwd("dfs-optimizer")           # project root
-source("run_example.R")          # demo on a synthetic slate, writes ./output/*.csv
+setwd("dfs-optimizer")                      # project root
+source("run_projections_example.R")         # REAL projections -> injury check -> optimizer -> lineups CSV
 ```
 
-or from a shell: `Rscript run_example.R`, `Rscript tests/run_tests.R`.
+or from a shell: `Rscript run_projections_example.R fanduel` (or `draftkings`). With no salary file it uses
+a demo slate (real players for the upcoming NFL week, made-up salaries), builds projections from nflverse
+data, applies the injury adjustment, and feeds those projections straight into the optimizer. With your
+own file: `Rscript run_projections_example.R fanduel FanDuel-NFL-....csv`. The first run downloads about
+50 MB of data into `cache/`.
+
+`run_example.R` is a separate, optimizer-only demo on fake players (no projections are built); use it to see
+the optimizer's options in isolation. `Rscript tests/run_tests.R` runs all tests, `Rscript run_backtest.R`
+reproduces the accuracy numbers.
 
 **Packages:** base R plus one solver. `install.packages("Rglpk")` (preferred, faster) and/or
 `install.packages("lpSolve")`. The code picks whichever is installed (`solver = "auto"`).
@@ -32,18 +40,19 @@ or from a shell: `Rscript run_example.R`, `Rscript tests/run_tests.R`.
 ## Using your own data
 
 ```r
-slate <- load_dk_salaries("DKSalaries.csv")         # or: load_fd_players("FanDuel-NFL-....csv")
-proj  <- read_projections("my_projections.csv")     # columns: name, position, team, proj
-slate <- merge_projections(slate, proj)             # tells you who didn't match
-res   <- optimize_lineups(slate, "draftkings", n = 20, min_unique = 3,
+slate <- load_dk_salaries("DKSalaries.csv")         # or: load_fd_players("FanDuel-NFL-....csv", drop_out = FALSE)
+proj  <- project_slate(slate, "draftkings")         # builds the projections (see next section)
+res   <- optimize_lineups(playable_slate(proj), "draftkings", n = 20, min_unique = 3,
                           randomness = 0.12, max_exposure = 0.5, bringback_min = 1)
 res                                                 # preview + most-used players
 write_lineups_csv(res, "output/dk_upload.csv")      # player ids, one lineup per row
 ```
 
-Projections are **not included** — the optimizer is only as good as the numbers you feed it.
-Your projections file needs `name, position, proj`; add `team` for defenses (they match by team).
-Optional columns: `stdev` (scales the noise per player), `max_exp` (per-player exposure cap, 0–1).
+The projections come from `project_slate()`: it builds them itself, so no projections file is needed.
+If you would rather use someone else's numbers (or a blend) instead of, or on top of, the model's,
+`read_projections("their_projections.csv")` + `merge_projections(slate, proj)` still work: the file needs
+`name, position, proj`, plus `team` for defenses (they match by team). Optional columns: `stdev` (scales
+the noise per player), `max_exp` (per-player exposure cap, 0–1).
 
 If you'd rather skip the loaders, any data frame with
 `id, name, position, team, opponent, salary, proj` works. See `data/sample_slate_*.csv`.

@@ -1,5 +1,7 @@
-# Demo: build 20 lineups for DraftKings and FanDuel from a SYNTHETIC slate
-# (fake players, so the numbers mean nothing) and write upload-style CSVs.
+# Optimizer-only demo: build 20 lineups for DraftKings and FanDuel from a SYNTHETIC slate
+# (fake players and fake projections, so the numbers mean nothing) and write upload-style CSVs.
+# This script does NOT build projections. For the real pipeline (projections -> injuries ->
+# optimizer) run run_projections_example.R instead.
 #
 #   Rscript run_example.R          (or open in RStudio and source it)
 
@@ -42,14 +44,11 @@ for (site in c("draftkings", "fanduel")) {
 }
 
 # ---- With real data -------------------------------------------------------
-# 1. Download the salary file from the site (DraftKings: DKSalaries.csv from the
-#    contest's "Draft Team" page; FanDuel: the player-list CSV from the contest).
-# 2. Get projections from wherever you source them: a CSV with columns
-#       name, position, team, proj          (optional: stdev, max_exp, own)
-#    Defenses are matched by team, so keep the team column filled for them.
+# Use run_projections_example.R, or in your own script:
 #
-#   slate <- load_dk_salaries("DKSalaries.csv")        # or load_fd_players("FanDuel-NFL-....csv")
-#   proj  <- read_projections("my_projections.csv")
-#   slate <- merge_projections(slate, proj)            # prints who failed to match
-#   res   <- optimize_lineups(slate, "draftkings", n = 20, ...)
+#   slate <- load_dk_salaries("DKSalaries.csv")        # or load_fd_players("FanDuel-NFL-....csv", drop_out = FALSE)
+#   proj  <- project_slate(slate, "draftkings")        # builds the projections, with the injury adjustment
+#   res   <- optimize_lineups(playable_slate(proj), "draftkings", n = 20, ...)
 #   write_lineups_csv(res, "output/dk_upload.csv")
+#
+# Or bring someone else's projections: read_projections() + merge_projections() (see README).
